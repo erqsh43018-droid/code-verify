@@ -14,16 +14,21 @@ async function redis(command, args = []) {
     args.map(v => encodeURIComponent(v)).join("/");
 
   const response = await fetch(url, {
+    method: "GET",
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json"
     }
   });
 
+  const text = await response.text();
+
   if (!response.ok) {
+    console.error("Redis error:", response.status, text);
     throw new Error("Redis request failed");
   }
 
-  return response.json();
+  return JSON.parse(text);
 }
 
 module.exports = async (req, res) => {
@@ -35,23 +40,26 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { email, code } = req.body || {};
+    const body = req.body || {};
 
-    const cleanEmail = String(email || "").trim().toLowerCase();
-    const cleanCode = String(code || "").trim();
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
 
-    if (!cleanEmail || !/^\d{5}$/.test(cleanCode)) {
+    const code = String(body.code || "").trim();
+
+    if (!email || !/^\d{5}$/.test(code)) {
       return res.status(400).json({
         ok: false,
         error: "invalid_input"
       });
     }
 
-    const key = `otp:${cleanEmail}`;
+    const key = `otp:${email}`;
 
     const result = await redis("get", [key]);
 
-    if (!result.result) {
+    if (!result || !result.result) {
       return res.status(400).json({
         ok: false,
         error: "expired"
@@ -62,7 +70,7 @@ module.exports = async (req, res) => {
 
     try {
       data = JSON.parse(result.result);
-    } catch {
+    } catch (e) {
       await redis("del", [key]);
 
       return res.status(400).json({
@@ -80,8 +88,8 @@ module.exports = async (req, res) => {
       });
     }
 
-    if (cleanCode !== data.code) {
-      data.attempts++;
+    if (String(data.code) !== code) {
+      data.attempts = Number(data.attempts || 0) + 1;
 
       await redis("setex", [
         key,
@@ -102,84 +110,11 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("VERIFY ERROR:", error);
 
     return res.status(500).json({
       ok: false,
       error: "server_error"
-    });
-  }
-};      .toLowerCase();
-
-    const code = String(req.body?.code || "").trim();
-
-    if (!email || !/^\d{5}$/.test(code)) {
-      return json(res, 400, {
-        ok: false,
-        error: "wrong"
-      });
-    }
-
-    const key = `otp:${email}`;
-
-    const stored = await redis("GET", [key]);
-
-    if (!stored.result) {
-      return json(res, 400, {
-        ok: false,
-        error: "expired"
-      });
-    }
-
-    let data;
-
-    try {
-      data = JSON.parse(stored.result);
-    } catch {
-      await redis("DEL", [key]);
-
-      return json(res, 400, {
-        ok: false,
-        error: "expired"
-      });
-    }
-
-    if (data.attempts >= 5) {
-      await redis("DEL", [key]);
-
-      return json(res, 429, {
-        ok: false,
-        error: "too_many_attempts"
-      });
-    }
-
-    if (code !== data.code) {
-      data.attempts += 1;
-
-      await redis("SETEX", [
-        key,
-        "60",
-        JSON.stringify(data)
-      ]);
-
-      return json(res, 400, {
-        ok: false,
-        error: "wrong"
-      });
-    }
-
-    await redis("DEL", [key]);
-
-    return json(res, 200, {
-      ok: true
-    });
-
-  } catch (error) {
-    console.error(error);
-
-    return json(res, 500, {
-      ok: false,
-      error: "server"
     });
   }
 };
