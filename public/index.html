@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+
+<title>CODE VERIFY</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+:root{
+  --bg:#edf4ff;
+  --card:rgba(255,255,255,.72);
+  --card2:rgba(255,255,255,.48);
+  --text:#12213d;
+  --muted:#71809a;
+  --line:rgba(40,75,130,.12);
+  --blue:#1769ff;
+  --blue2:#4c91ff;
+  --green:#19b978;
+  --danger:#e84b68;
+  --shadow:0 25px 80px rgba(43,77,133,.15);
+}
+
+body.dark{
+  --bg:#07111f;
+  --card:rgba(18,31,51,.78);
+  --card2:rgba(22,39,63,.5);
+  --text:#eef5ff;
+  --muted:#8fa1bb;
+  --line:rgba(180,210,255,.1);
+  --shadow:0 25px 80px rgba(0,0,0,.4);
+}
+
+body{
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,"Noto Sans Bengali",sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow-x:hidden;
+  transition:.35s ease;
+}
+
+body:before,
+body:after{
+  content:"";
+  position:fixed;
+  width:360px;
+  height:360px;
+  border-radius:50%;
+  filter:blur(90px);
+  pointer-events:none;
+  z-index:-1;
+  opacity:.45;
+}
+
+body:before{
+  background:#5d9dff;
+  top:-150px;
+  left:-100px;
+}
+
+body:after{
+  background:#9c7bff;
+  right:-150px;
+  bottom:-150px;
+}
+
+.app{
+  width:min(100%,560px);
+  padding:22px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.logo{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  font-weight:800;
+  letter-spacing:-.5px;
+}
+
+.logo-mark{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  background:linear-gradient(145deg,#2477ff,#6aa8ff);
+  color:white;
+  box-shadow:0 10px 25px rgba(23,105,255,.25);
+}
+
+.logo-mark svg{
+  width:5px;
+}
+
+.demo{
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1.2px;
+  color:var(--blue);
+  background:rgba(23,105,255,.09);
+  border:1px solid rgba(23,105,255,.12);
+  padding:6px 9px;
+  border-radius:20px;
+}
+
+.theme{
+  width:40px;
+  height:40px;
+  border:1px solid var(--line);
+  background:var(--card2);
+  backdrop-filter:blur(20px);
+  border-radius:13px;
+  color:var(--text);
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+}
+
+.theme svg{
+  width:19px;
+}
+
+.notice{
+  display:none;
+  position:fixed;
+  top:max(18px,env(safe-area-inset-top) + 10px);
+  left:50%;
+  transform:translate(-50%,-30px);
+  width:min(calc(100% - 32px),430px);
+  z-index:20;
+  padding:13px 15px;
+  border:1px solid var(--line);
+  background:var(--card);
+  backdrop-filter:blur(24px);
+  border-radius:15px;
+  box-shadow:var(--shadow);
+  font-size:13px;
+  font-weight:600;
+  text-align:center;
+}
+
+.notice.show{
+  display:block;
+  animation:noticeIn .35s ease forwards,noticeOut .4s ease 1.65s forwards;
+}
+
+.notice.error{
+  color:var(--danger);
+}
+
+.notice.success{
+  color:var(--green);
+}
+
+@keyframes noticeIn{
+  to{transform:translate(-50%,0)}
+}
+
+@keyframes noticeOut{
+  to{
+    opacity:0;
+    transform:translate(-50%,-30px);
+  }
+}
+
+.card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:var(--card);
+  backdrop-filter:blur(35px);
+  -webkit-backdrop-filter:blur(35px);
+  border-radius:30px;
+  padding:28px;
+  box-shadow:var(--shadow);
+}
+
+.card:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    120deg,
+    rgba(255,255,255,.16),
+    transparent 35%,
+    rgba(255,255,255,.04)
+  );
+  pointer-events:none;
+}
+
+.progress{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-bottom:28px;
+}
+
+.p-dot{
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-size:11px;
+  font-weight:800;
+  color:var(--muted);
+  background:var(--card2);
+  border:1px solid var(--line);
+  transition:.4s ease;
+}
+
+.p-dot.active{
+  color:#fff;
+  background:var(--blue);
+  border-color:var(--blue);
+  box-shadow:0 8px 22px rgba(23,105,255,.28);
+}
+
+.p-line{
+  flex:1;
+  height:2px;
+  background:var(--line);
+  position:relative;
+  overflow:hidden;
+}
+
+.p-line:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:var(--blue);
+  transform:translateX(-100%);
+  transition:.6s ease;
+}
+
+.p-line.done:after{
+  transform:translateX(0);
+}
+
+.step{
+  display:none;
+  animation:stepIn .5s ease;
+}
+
+.step.active{
+  display:block;
+}
+
+@keyframes stepIn{
+  from{
+    opacity:0;
+    transform:translateY(12px);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+.hero{
+  text-align:center;
+  margin-bottom:27px;
+}
+
+.hero-icon{
+  width:68px;
+  height:68px;
+  border-radius:21px;
+  margin:0 auto 18px;
+  display:grid;
+  place-items:center;
+  background:rgba(23,105,255,.1);
+  color:var(--blue);
+}
+
+.hero-icon svg{
+  width:31px;
+}
+
+h1{
+  font-size:27px;
+  letter-spacing:-1px;
+  margin-bottom:8px;
+}
+
+.subtitle{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.65;
+}
+
+.methods{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:18px;
+}
+
+.method{
+  border:1px solid var(--line);
+  background:var(--card2);
+  border-radius:17px;
+  padding:14px;
+  color:var(--muted);
+  cursor:pointer;
+  display:flex;
+  gap:9px;
+  align-items:center;
+  font-weight:700;
+  transition:.25s ease;
+}
+
+.method svg{
+  width:19px;
+}
+
+.method.active{
+  color:var(--blue);
+  border-color:rgba(23,105,255,.3);
+  background:rgba(23,105,255,.08);
+}
+
+.field-label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  margin:0 0 8px 4px;
+}
+
+.input-wrap{
+  position:relative;
+  margin-bottom:13px;
+}
+
+.input-wrap svg{
+  position:absolute;
+  left:15px;
+  top:50%;
+  transform:translateY(-50%);
+  width:18px;
+  color:var(--muted);
+}
+
+input,select{
+  width:100%;
+  height:53px;
+  border:1px solid var(--line);
+  background:var(--card2);
+  color:var(--text);
+  outline:none;
+  border-radius:15px;
+  font-family:inherit;
+  font-size:14px;
+  transition:.25s ease;
+}
+
+input{
+  padding:0 15px 0 46px;
+}
+
+input:focus,
+select:focus{
+  border-color:rgba(23,105,255,.5);
+  box-shadow:0 0 0 4px rgba(23,105,255,.08);
+}
+
+.phone-row{
+  display:grid;
+  grid-template-columns:115px 1fr;
+  gap:8px;
+}
+
+select{
+  padding:0 9px;
+}
+
+.btn{
+  width:100%;
+  height:54px;
+  border:0;
+  border-radius:16px;
+  background:linear-gradient(135deg,#1769ff,#4b91ff);
+  color:#fff;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 12px 30px rgba(23,105,255,.22);
+  transition:.25s ease;
+}
+
+.btn:active{
+  transform:scale(.985);
+}
+
+.btn:disabled{
+  opacity:.65;
+  cursor:not-allowed;
+}
+
+.btn .loader{
+  display:none;
+  width:18px;
+  height:18px;
+  border:2px solid rgba(255,255,255,.35);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+  margin:auto;
+}
+
+.btn.loading span{
+  display:none;
+}
+
+.btn.loading .loader{
+  display:block;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
+.secure{
+  text-align:center;
+  margin-top:15px;
+  font-size:10px;
+  color:var(--muted);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+
+.secure svg{
+  width:12px;
+}
+
+.otp-info{
+  text-align:center;
+  margin-bottom:24px;
+}
+
+.email-display{
+  color:var(--blue);
+  font-weight:700;
+}
+
+.otp{position:relative;display:flex;justify-content:center;gap:9px;margin:20px 0 14px}
+.otp input{width:50px;height:58px;padding:0;text-align:center;font-size:21px;font-weight:800;border-radius:15px}
+
+.verify-stage{position:relative;min-height:178px;display:grid;place-items:center;overflow:visible}
+.orbit-system{position:relative;width:100%;height:92px;display:grid;place-items:center;transition:width .55s ease,height .55s ease}
+.orbit-network{position:absolute;left:50%;top:50%;width:210px;height:210px;transform:translate(-50%,-50%) scale(.55);opacity:0;pointer-events:none;z-index:1;overflow:visible;transition:opacity .45s ease,transform .6s cubic-bezier(.2,.9,.2,1)}
+.orbit-network line{stroke:rgba(76,145,255,.38);stroke-width:1.25;stroke-dasharray:4 7;filter:drop-shadow(0 0 5px rgba(76,145,255,.28))}
+.orbit-network .strong{stroke:rgba(23,105,255,.58);stroke-width:1.5;stroke-dasharray:none}
+
+.orbit-core{position:absolute;left:50%;top:50%;width:13px;height:13px;transform:translate(-50%,-50%) scale(.3);border-radius:50%;background:var(--blue);box-shadow:0 0 0 5px rgba(23,105,255,.08),0 0 24px rgba(23,105,255,.65);opacity:0;z-index:2;pointer-events:none;transition:opacity .4s ease,transform .5s cubic-bezier(.2,1.5,.5,1)}
+.orbit-core:before,.orbit-core:after{content:"";position:absolute;inset:-9px;border:1px solid rgba(23,105,255,.18);border-radius:50%}
+.orbit-core:after{inset:-18px;border-color:rgba(23,105,255,.08)}
+
+.orbit-nodes{position:relative;width:100%;height:78px;display:flex;align-items:center;justify-content:center;gap:9px;z-index:3;transition:opacity .3s ease}
+.otp-node{position:relative;width:50px;height:58px;padding:0;border:1px solid var(--line);background:var(--card2);color:var(--text);border-radius:15px;text-align:center;font-family:inherit;font-size:21px;font-weight:800;outline:none;box-shadow:0 12px 28px rgba(30,65,120,.10);transition:border-color .25s ease,box-shadow .25s ease,background .25s ease,color .25s ease,transform .25s ease;caret-color:var(--blue)}
+.otp-node:focus{border-color:rgba(23,105,255,.5);box-shadow:0 0 0 4px rgba(23,105,255,.08),0 12px 28px rgba(30,65,120,.12)}
+.otp-node.pop{animation:otpNodePop .34s cubic-bezier(.2,1.5,.5,1)}
+@keyframes otpNodePop{50%{transform:scale(1.09)}}
+
+.particle-field{position:absolute;inset:-45px;pointer-events:none;z-index:0;opacity:0;transition:opacity .45s ease}
+.particle{position:absolute;left:50%;top:50%;width:3px;height:3px;border-radius:50%;background:var(--blue2);box-shadow:0 0 9px rgba(76,145,255,.85);opacity:0;animation:particleFloat var(--dur) ease-in-out var(--delay) infinite}
+@keyframes particleFloat{0%,100%{opacity:0;transform:translate(0,0) scale(.3)}20%{opacity:.65}50%{opacity:.95;transform:translate(var(--px),var(--py)) scale(1)}80%{opacity:.35}}
+
+.orbit-active .orbit-system{width:210px;height:210px}
+.orbit-active .orbit-network{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.orbit-active .orbit-core{opacity:1;transform:translate(-50%,-50%) scale(1);animation:corePulse 1.7s ease-in-out infinite}
+@keyframes corePulse{0%,100%{box-shadow:0 0 0 5px rgba(23,105,255,.08),0 0 20px rgba(23,105,255,.5)}50%{box-shadow:0 0 0 9px rgba(23,105,255,.06),0 0 34px rgba(23,105,255,.85)}}
+
+.orbit-active .orbit-nodes{position:absolute;inset:0;width:210px;height:210px;display:block;animation:orbitRotate 5.2s linear infinite}
+.orbit-active .otp-node{position:absolute;left:50%;top:50%;margin:-29px 0 0 -25px}
+.orbit-active .otp-node:nth-child(1){transform:translateY(-88px)}
+.orbit-active .otp-node:nth-child(2){transform:translateX(88px)}
+.orbit-active .otp-node:nth-child(3){transform:translateY(88px)}
+.orbit-active .otp-node:nth-child(4){transform:translateX(-88px)}
+.orbit-active .otp-node:nth-child(5){transform:rotate(45deg) translateY(-62px)}
+@keyframes orbitRotate{to{transform:rotate(360deg)}}
+
+.orbit-error .orbit-nodes{animation:orbitShake .55s ease}
+.orbit-error .otp-node{border-color:rgba(232,75,104,.7);background:rgba(232,75,104,.1);color:var(--danger);box-shadow:0 0 0 3px rgba(232,75,104,.06),0 0 22px rgba(232,75,104,.18)}
+@keyframes orbitShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+.orbit-success .orbit-network,.orbit-success .particle-field{opacity:0}
+.orbit-success .orbit-core{background:var(--green);box-shadow:0 0 0 6px rgba(25,185,120,.08),0 0 30px rgba(25,185,120,.75);animation:successCore .55s ease forwards}
+@keyframes successCore{0%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(7);opacity:0}}
+.orbit-success .orbit-nodes{animation:successCollapse .75s cubic-bezier(.2,.85,.25,1) forwards}
+.orbit-success .otp-node{border-color:rgba(25,185,120,.75);background:rgba(25,185,120,.12);color:var(--green)}
+@keyframes successCollapse{0%{transform:rotate(0) scale(1);opacity:1}55%{transform:rotate(135deg) scale(.48);opacity:1}100%{transform:rotate(180deg) scale(.08);opacity:0}}
+
+.scan-beam{position:absolute;left:0;right:0;height:2px;top:0;background:linear-gradient(90deg,transparent,#63a4ff,#fff,#63a4ff,transparent);box-shadow:0 0 18px #4d94ff;opacity:0;pointer-events:none;z-index:10}
+.scanning .scan-beam{opacity:1;animation:beam 1.1s ease}
+@keyframes beam{from{top:0}to{top:100%}}
+
+@media(max-width:430px){
+  .verify-stage{min-height:170px}
+  .orbit-active .orbit-system{width:188px;height:188px}
+  .orbit-network{width:188px;height:188px}
+  .orbit-active .orbit-nodes{width:188px;height:188px}
+  .orbit-active .otp-node:nth-child(1){transform:translateY(-78px)}
+  .orbit-active .otp-node:nth-child(2){transform:translateX(78px)}
+  .orbit-active .otp-node:nth-child(3){transform:translateY(78px)}
+  .orbit-active .otp-node:nth-child(4){transform:translateX(-78px)}
+  .orbit-active .otp-node:nth-child(5){transform:rotate(45deg) translateY(-55px)}
+}
+.success{
+  text-align:center;
+  padding:28px 5px 10px;
+}
+
+.success-ring{
+  width:92px;
+  height:92px;
+  border-radius:50%;
+  margin:0 auto 23px;
+  display:grid;
+  place-items:center;
+  color:var(--green);
+  border:1px solid rgba(25,185,120,.2);
+  background:rgba(25,185,120,.08);
+  animation:successPop .7s cubic-bezier(.2,1.4,.5,1);
+}
+
+.success-ring svg{
+  width:40px;
+}
+
+@keyframes successPop{
+  0%{
+    transform:scale(.5);
+    opacity:0;
+  }
+  70%{transform:scale(1.08)}
+  100%{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+.success h2{
+  font-size:25px;
+  margin-bottom:9px;
+}
+
+.success p{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.6;
+}
+
+.footer{
+  display:flex;
+  justify-content:space-between;
+  gap:15px;
+  margin-top:15px;
+  padding:0 6px;
+  color:var(--muted);
+  font-size:9px;
+  letter-spacing:.2px;
+}
+
+.footer strong{
+  color:var(--text);
+  font-weight:700;
+}
+
+@media(max-width:430px){
+  .app{
+    padding:14px;
+  }
+
+  .card{
+    padding:22px 17px;
+    border-radius:25px;
+  }
+
+  h1{
+    font-size:24px;
+  }
+
+  .otp{
+    gap:6px;
+  }
+
+  .otp input{
+    width:44px;
+    height:54px;
+  }
+
+  .footer{
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="notice" class="notice"></div>
+
+<main class="app">
+
+  <header class="topbar">
+
+    <div class="logo">
+      <div class="logo-mark">
+        <img src="https://i.ibb.co.com/276nrB1n/FB-IMG-1779025966915.jpg" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:13px;">
+      </div>
+
+      <div>
+        CODE VERIFY
+        <div class="demo">ERESH</div>
+      </div>
+    </div>
+
+    <button class="theme" id="themeBtn" aria-label="Toggle theme">
+      <svg id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>
+      </svg>
+    </button>
+
+  </header>
+
+  <section class="card">
+
+    <div class="progress">
+      <div class="p-dot active" id="p1">1</div>
+      <div class="p-line" id="line1"></div>
+      <div class="p-dot" id="p2">2</div>
+      <div class="p-line" id="line2"></div>
+      <div class="p-dot" id="p3">3</div>
+    </div>
+
+    <!-- STEP 1 -->
+
+    <div class="step active" id="step1">
+
+      <div class="hero">
+
+        <div class="hero-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="5" width="18" height="14" rx="3"/>
+            <path d="m4 7 8 6 8-6"/>
+          </svg>
+        </div>
+
+        <h1>Verify your email</h1>
+
+        <p class="subtitle">
+          Enter your email address to receive a secure verification code.
+        </p>
+
+      </div>
+
+      <div class="methods">
+
+        <button class="method active" id="emailMethod">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="5" width="18" height="14" rx="3"/>
+            <path d="m4 7 8 6 8-6"/>
+          </svg>
+          Email
+        </button>
+
+        <button class="method" id="phoneMethod">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="7" y="2.5" width="10" height="19" rx="2"/>
+            <path d="M10 5h4M11 18h2"/>
+          </svg>
+          Phone
+        </button>
+
+      </div>
+
+      <div id="emailBox">
+
+        <label class="field-label">Email address</label>
+
+        <div class="input-wrap">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="5" width="18" height="14" rx="3"/>
+            <path d="m4 7 8 6 8-6"/>
+          </svg>
+
+          <input
+            id="email"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+          >
+
+        </div>
+
+      </div>
+
+      <div id="phoneBox" style="display:none">
+
+        <label class="field-label">Phone number</label>
+
+        <div class="phone-row">
+
+          <select id="country">
+            <option value="+880">+880 BD</option>
+            <option value="+91">+91 IN</option>
+            <option value="+1">+1 US</option>
+            <option value="+44">+44 UK</option>
+            <option value="+971">+971 AE</option>
+            <option value="+966">+966 SA</option>
+          </select>
+
+          <div class="input-wrap">
+
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="7" y="2.5" width="10" height="19" rx="2"/>
+              <path d="M10 5h4M11 18h2"/>
+            </svg>
+
+            <input id="phone" type="tel" placeholder="1XXXXXXXXX">
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <button class="btn" id="sendBtn">
+        <span>Send verification code</span>
+        <i class="loader"></i>
+      </button>
+
+      <div class="secure">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="4" y="10" width="16" height="11" rx="2"/>
+          <path d="M7 10V7a5 5 0 0 1 10 0v3"/>
+        </svg>
+
+        Your verification code is protected
+
+      </div>
+
+    </div>
+
+    <!-- STEP 2 -->
+
+    <div class="step" id="step2">
+
+      <div class="hero">
+
+        <div class="hero-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 7h16v12H4z"/>
+            <path d="m5 8 7 5 7-5"/>
+            <path d="M8 4h8"/>
+          </svg>
+        </div>
+
+        <h1>Enter your code</h1>
+
+        <p class="subtitle">
+          We sent a 5-digit verification code to
+          <span class="email-display" id="displayEmail"></span>
+        </p>
+
+      </div>
+
+      <div class="verify-stage" id="verifyStage">
+
+        <div class="scan-beam"></div>
+        <div class="particle-field" id="particleField"></div>
+
+        <div class="orbit-system">
+
+          <svg class="orbit-network" viewBox="0 0 210 210" aria-hidden="true">
+            <line class="strong" x1="105" y1="17" x2="193" y2="105"></line>
+            <line class="strong" x1="193" y1="105" x2="105" y2="193"></line>
+            <line class="strong" x1="105" y1="193" x2="17" y2="105"></line>
+            <line class="strong" x1="17" y1="105" x2="105" y2="17"></line>
+            <line x1="105" y1="17" x2="105" y2="193"></line>
+            <line x1="17" y1="105" x2="193" y2="105"></line>
+            <line x1="43" y1="43" x2="167" y2="167"></line>
+            <line x1="167" y1="43" x2="43" y2="167"></line>
+          </svg>
+
+          <div class="orbit-core"></div>
+
+          <div class="orbit-nodes" id="otp">
+            <input class="otp-node" maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="Digit 1">
+            <input class="otp-node" maxlength="1" inputmode="numeric" aria-label="Digit 2">
+            <input class="otp-node" maxlength="1" inputmode="numeric" aria-label="Digit 3">
+            <input class="otp-node" maxlength="1" inputmode="numeric" aria-label="Digit 4">
+            <input class="otp-node" maxlength="1" inputmode="numeric" aria-label="Digit 5">
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="timer" id="timer">
+        Code expires in 60s
+      </div>
+
+      <button class="btn" id="verifyBtn">
+
+        <span>Verify code</span>
+        <i class="loader"></i>
+
+      </button>
+
+      <div style="text-align:center;margin-top:16px">
+
+        <button class="resend" id="resendBtn" disabled>
+          Resend code
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- STEP 3 -->
+
+    <div class="step" id="step3">
+
+      <div class="success">
+
+        <div class="success-ring">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <path d="m5 12 4 4L19 6"/>
+          </svg>
+
+        </div>
+
+        <h2>Verification successful</h2>
+
+        <p>
+          Your email address has been verified successfully.
+          You can safely continue.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <footer class="footer">
+
+    <span>CODE VERIFY • Verification Demo</span>
+    <strong>Developed By Eresh Devx</strong>
+
+  </footer>
+
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let selectedMethod = "email";
+let currentEmail = "";
+let timerInterval = null;
+let remaining = 60;
+
+
+const otpInputs = [...document.querySelectorAll("#otp input")];
+
+function createParticles() {
+  const field = $("particleField");
+  if (!field || field.children.length) return;
+
+  for (let i = 0; i < 72; i++) {
+    const p = document.createElement("i");
+    p.className = "particle";
+
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 65 + Math.random() * 115;
+
+    p.style.setProperty("--px", `${Math.cos(angle) * distance}px`);
+    p.style.setProperty("--py", `${Math.sin(angle) * distance}px`);
+    p.style.setProperty("--dur", `${2.4 + Math.random() * 3.2}s`);
+    p.style.setProperty("--delay", `${Math.random() * 1.8}s`);
+
+    field.appendChild(p);
+  }
+}
+
+createParticles();
+
+function showNotice(message, type = "") {
+  const notice = $("notice");
+
+  notice.className = "notice";
+  notice.textContent = message;
+
+  if (type) notice.classList.add(type);
+
+  void notice.offsetWidth;
+
+  notice.classList.add("show");
+}
+
+function setStep(step) {
+  document.querySelectorAll(".step").forEach(x => {
+    x.classList.remove("active");
+  });
+
+  $("step" + step).classList.add("active");
+
+  $("p1").classList.toggle("active", step >= 1);
+  $("p2").classList.toggle("active", step >= 2);
+  $("p3").classList.toggle("active", step >= 3);
+
+  $("line1").classList.toggle("done", step >= 2);
+  $("line2").classList.toggle("done", step >= 3);
+}
+
+function clearOTP() {
+  const stage = $("verifyStage");
+  stage.classList.remove("orbit-active","orbit-error","orbit-success","scanning");
+
+  otpInputs.forEach(input => {
+    input.value = "";
+    input.classList.remove("pop");
+  });
+
+  otpInputs[0].focus();
+}
+
+function getOTP() {
+  return otpInputs.map(x => x.value).join("");
+}
+
+function startTimer(seconds = 60) {
+  clearInterval(timerInterval);
+
+  remaining = seconds;
+  $("resendBtn").disabled = true;
+
+  $("timer").textContent = `Code expires in ${remaining}s`;
+
+  timerInterval = setInterval(() => {
+
+    remaining--;
+
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+
+      $("timer").textContent = "Code expired";
+      $("resendBtn").disabled = false;
+
+      return;
+    }
+
+    $("timer").textContent = `Code expires in ${remaining}s`;
+
+  }, 1000);
+}
+
+async function sendCode() {
+
+  if (selectedMethod !== "email") {
+    showNotice("Phone verification is not enabled yet.", "error");
+    return;
+  }
+
+  const email = $("email").value.trim().toLowerCase();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showNotice("Please enter a valid email address.", "error");
+    $("email").focus();
+    return;
+  }
+
+  const button = $("sendBtn");
+
+  button.disabled = true;
+  button.classList.add("loading");
+
+  try {
+
+    const response = await fetch("/api/send-code", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.message || "Unable to send code.");
+    }
+
+    currentEmail = email;
+
+    $("displayEmail").textContent = email;
+
+    clearOTP();
+    startTimer(data.expiresIn || 60);
+
+    setStep(2);
+
+    showNotice("Verification code sent.", "success");
+
+  } catch (error) {
+
+    showNotice(
+      error.message || "Unable to send verification code.",
+      "error"
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.classList.remove("loading");
+
+  }
+}
+
+async function verifyCode() {
+
+  const code = getOTP();
+
+  if (code.length !== 5) {
+    showNotice("Enter the complete 5-digit code.", "error");
+    return;
+  }
+
+  const stage = $("verifyStage");
+  const button = $("verifyBtn");
+
+  stage.classList.remove("orbit-error","orbit-success");
+  stage.classList.add("scanning","orbit-active");
+
+  button.disabled = true;
+  button.classList.add("loading");
+
+  await new Promise(resolve => setTimeout(resolve, 1100));
+
+  try {
+
+    const response = await fetch("/api/verify-code", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: currentEmail,
+        code
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+
+      stage.classList.remove("scanning");
+      stage.classList.add("orbit-error");
+
+      if (data.error === "expired") {
+        showNotice("This code has expired. Request a new code.", "error");
+      } else if (data.error === "too_many_attempts") {
+        showNotice("Too many attempts. Request a new code.", "error");
+      } else {
+        showNotice("Incorrect verification code.", "error");
+      }
+
+      setTimeout(() => {
+        stage.classList.remove("orbit-error","orbit-active");
+        clearOTP();
+      }, 700);
+
+      return;
+    }
+
+    clearInterval(timerInterval);
+
+    stage.classList.remove("scanning");
+    stage.classList.add("orbit-success");
+
+    await new Promise(resolve => setTimeout(resolve, 850));
+
+    setStep(3);
+
+  } catch (error) {
+
+    stage.classList.remove("scanning");
+    stage.classList.add("orbit-error");
+
+    showNotice("Something went wrong. Please try again.", "error");
+
+    setTimeout(() => {
+      stage.classList.remove("orbit-error","orbit-active");
+      clearOTP();
+    }, 700);
+
+  } finally {
+
+    button.disabled = false;
+    button.classList.remove("loading");
+
+  }
+}
+
+async function resendCode() {
+
+  if (!currentEmail) return;
+
+  const button = $("resendBtn");
+
+  button.disabled = true;
+
+  try {
+
+    const response = await fetch("/api/send-code", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: currentEmail
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.message || "Please wait before resending.");
+    }
+
+    clearOTP();
+    startTimer(data.expiresIn || 60);
+
+    showNotice("A new verification code was sent.", "success");
+
+  } catch (error) {
+
+    showNotice(
+      error.message || "Unable to resend code.",
+      "error"
+    );
+
+    setTimeout(() => {
+      button.disabled = false;
+    }, 3000);
+
+  }
+}
+
+otpInputs.forEach((input, index) => {
+
+  input.addEventListener("input", () => {
+
+    input.value = input.value.replace(/\D/g, "").slice(0, 1);
+
+    if (input.value) {
+      input.classList.remove("pop");
+      void input.offsetWidth;
+      input.classList.add("pop");
+
+      if (index < otpInputs.length - 1) {
+        otpInputs[index + 1].focus();
+      }
+    }
+
+  });
+
+  input.addEventListener("keydown", event => {
+
+    if (
+      event.key === "Backspace" &&
+      !input.value &&
+      index > 0
+    ) {
+      otpInputs[index - 1].focus();
+    }
+
+  });
+
+  input.addEventListener("paste", event => {
+
+    event.preventDefault();
+
+    const pasted = (
+      event.clipboardData.getData("text") || ""
+    ).replace(/\D/g, "").slice(0, 5);
+
+    pasted.split("").forEach((char, i) => {
+      if (otpInputs[i]) {
+        setTimeout(() => {
+          otpInputs[i].value = char;
+          otpInputs[i].classList.remove("pop");
+          void otpInputs[i].offsetWidth;
+          otpInputs[i].classList.add("pop");
+        }, i * 70);
+      }
+    });
+
+    otpInputs[Math.min(pasted.length, 4)].focus();
+
+  });
+
+});
+
+$("sendBtn").addEventListener("click", sendCode);
+$("verifyBtn").addEventListener("click", verifyCode);
+$("resendBtn").addEventListener("click", resendCode);
+
+$("emailMethod").addEventListener("click", () => {
+
+  selectedMethod = "email";
+
+  $("emailMethod").classList.add("active");
+  $("phoneMethod").classList.remove("active");
+
+  $("emailBox").style.display = "block";
+  $("phoneBox").style.display = "none";
+
+});
+
+$("phoneMethod").addEventListener("click", () => {
+
+  selectedMethod = "phone";
+
+  $("phoneMethod").classList.add("active");
+  $("emailMethod").classList.remove("active");
+
+  $("emailBox").style.display = "none";
+  $("phoneBox").style.display = "block";
+
+});
+
+$("themeBtn").addEventListener("click", () => {
+
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "codeVerifyTheme",
+    document.body.classList.contains("dark")
+      ? "dark"
+      : "light"
+  );
+
+});
+
+if (localStorage.getItem("codeVerifyTheme") === "dark") {
+  document.body.classList.add("dark");
+}
+</script>
+
+</body>
+</html>
