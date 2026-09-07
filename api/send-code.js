@@ -101,7 +101,7 @@ module.exports = async (req, res) => {
 
     await transporter.sendMail({
 
-      from: `"CODE VERIFY" <${gmailUser}>`,
+      from: `"ERESH DEVX OTP" <${gmailUser}>`,
 
       to: email,
 
