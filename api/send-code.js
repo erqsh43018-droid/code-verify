@@ -34,16 +34,8 @@ async function redis(command, args = []) {
   return JSON.parse(text);
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 module.exports = async (req, res) => {
+
   if (req.method !== "POST") {
     return res.status(405).json({
       ok: false,
@@ -52,47 +44,51 @@ module.exports = async (req, res) => {
   }
 
   try {
+
     const body = req.body || {};
-    const email = String(body.email || "").trim().toLowerCase();
+
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
         ok: false,
-        error: "invalid_email",
-        message: "Please enter a valid email address."
+        error: "invalid_email"
       });
     }
 
-    const cooldownKey = `otp_cooldown:${email}`;
-    const cooldownCheck = await redis("get", [cooldownKey]);
+    const key = `otp:${email}`;
 
-    if (cooldownCheck && cooldownCheck.result) {
+    const existing = await redis("get", [key]);
+
+    if (existing && existing.result) {
       return res.status(429).json({
         ok: false,
-        error: "cooldown",
-        message: "Please wait before requesting another code."
+        error: "cooldown"
       });
     }
 
-    const code = String(crypto.randomInt(10000, 100000));
-    const otpKey = `otp:${email}`;
+    const code = String(
+      crypto.randomInt(10000, 100000)
+    );
 
     await redis("setex", [
-      otpKey,
+      key,
       "60",
       JSON.stringify({
-        code,
+        code: code,
         attempts: 0
       })
     ]);
-
-    await redis("setex", [cooldownKey, "30", "1"]);
 
     const gmailUser = process.env.GMAIL_USER;
     const gmailPassword = process.env.GMAIL_APP_PASSWORD;
 
     if (!gmailUser || !gmailPassword) {
-      throw new Error("Gmail environment variables are missing");
+      throw new Error(
+        "Gmail environment variables are missing"
+      );
     }
 
     const transporter = nodemailer.createTransport({
@@ -103,186 +99,323 @@ module.exports = async (req, res) => {
       }
     });
 
-    const safeEmail = escapeHtml(email);
-
     await transporter.sendMail({
+
       from: `"CODE VERIFY" <${gmailUser}>`,
+
       to: email,
-      subject: `${code} is your CODE VERIFY verification code`,
+
+      subject:
+        `${code} is your CODE VERIFY verification code`,
 
       text:
 `CODE VERIFY
 
-Your verification code is: ${code}
+Your verification code is:
+
+${code}
 
 This code expires in 60 seconds.
 
 If you did not request this code, you can safely ignore this email.
 
-CODE VERIFY • Verification Demo
+CODE VERIFY
 Developed By Eresh Devx`,
 
       html: `
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
 <title>CODE VERIFY</title>
+
 </head>
 
-<body style="margin:0;padding:0;background:#07111f;font-family:Arial,Helvetica,sans-serif;color:#eef5ff;">
+<body
+  style="
+    margin:0;
+    padding:0;
+    background:#070b12;
+    font-family:Arial,Helvetica,sans-serif;
+  "
+>
 
-  <div style="padding:34px 14px;background:#07111f;">
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="
+    background:#070b12;
+    padding:35px 12px;
+  "
+>
 
-    <div style="
-      max-width:520px;
-      margin:0 auto;
-      background:#101d31;
-      border:1px solid #263956;
-      border-radius:24px;
-      overflow:hidden;
-    ">
+<tr>
 
-      <div style="
-        padding:28px 26px 22px;
-        text-align:center;
-        background:linear-gradient(145deg,#14294b,#0c1728);
-      ">
+<td align="center">
 
-        <div style="
-          display:inline-block;
-          width:48px;
-          height:48px;
-          line-height:48px;
-          border-radius:15px;
-          background:linear-gradient(145deg,#2477ff,#6aa8ff);
-          color:#fff;
-          font-size:24px;
-          font-weight:800;
-        ">
-          ✓
-        </div>
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="
+    max-width:500px;
+    background:#101722;
+    border:1px solid #243143;
+    border-radius:22px;
+    overflow:hidden;
+  "
+>
 
-        <div style="
-          margin-top:14px;
-          color:#fff;
-          font-size:22px;
-          font-weight:800;
-          letter-spacing:-.5px;
-        ">
-          CODE VERIFY
-        </div>
+<!-- HEADER -->
 
-        <div style="
-          margin-top:5px;
-          color:#8fa1bb;
-          font-size:12px;
-        ">
-          Secure email verification
-        </div>
+<tr>
 
-      </div>
+<td
+  align="center"
+  style="
+    padding:30px 20px 25px;
+    background:#111c2b;
+    border-bottom:1px solid #233246;
+  "
+>
 
-      <div style="padding:30px 26px;">
+<div
+  style="
+    width:52px;
+    height:52px;
+    line-height:52px;
+    border-radius:16px;
+    background:#1769ff;
+    color:#ffffff;
+    font-size:25px;
+    font-weight:bold;
+    margin:auto;
+  "
+>
+✓
+</div>
 
-        <div style="
-          text-align:center;
-          color:#a9b8cc;
-          font-size:13px;
-          line-height:1.7;
-        ">
-          Use the verification code below to continue.
-        </div>
+<div
+  style="
+    margin-top:14px;
+    color:#ffffff;
+    font-size:22px;
+    font-weight:bold;
+    letter-spacing:.5px;
+  "
+>
+CODE VERIFY
+</div>
 
-        <div style="margin:24px 0;text-align:center;">
+<div
+  style="
+    margin-top:6px;
+    color:#8798ad;
+    font-size:12px;
+  "
+>
+Secure verification
+</div>
 
-          <div style="
-            display:inline-block;
-            padding:18px 25px;
-            border:1px solid #28518a;
-            border-radius:18px;
-            background:#0b192c;
-            color:#4c91ff;
-            font-size:34px;
-            font-weight:800;
-            letter-spacing:8px;
-            line-height:1;
-          ">
-            ${code}
-          </div>
+</td>
 
-        </div>
+</tr>
 
-        <div style="
-          text-align:center;
-          color:#71809a;
-          font-size:12px;
-          line-height:1.7;
-        ">
-          This code expires in
-          <strong style="color:#19b978;">
-            60 seconds
-          </strong>.
-        </div>
 
-        <div style="
-          height:1px;
-          background:#203149;
-          margin:25px 0;
-        "></div>
+<!-- CONTENT -->
 
-        <div style="
-          color:#8fa1bb;
-          font-size:12px;
-          line-height:1.7;
-        ">
-          This verification code was requested for:
-          <strong style="color:#eef5ff;">
-            ${safeEmail}
-          </strong>
-        </div>
+<tr>
 
-        <div style="
-          margin-top:18px;
-          padding:13px 14px;
-          border-radius:13px;
-          background:#0b1727;
-          border:1px solid #1d304a;
-          color:#71809a;
-          font-size:11px;
-          line-height:1.6;
-        ">
-          If you did not request this code, you can safely ignore this email.
-        </div>
+<td
+  style="
+    padding:30px 24px;
+  "
+>
 
-      </div>
+<div
+  style="
+    color:#aab8ca;
+    font-size:14px;
+    line-height:22px;
+    text-align:center;
+  "
+>
+Your verification code is ready.
+</div>
 
-      <div style="
-        padding:18px 24px;
-        text-align:center;
-        border-top:1px solid #203149;
-        color:#71809a;
-        font-size:10px;
-      ">
-        CODE VERIFY • Verification Demo<br>
 
-        <strong style="color:#dce7f5;">
-          Developed By Eresh Devx
-        </strong>
-      </div>
+<!-- CODE -->
 
-    </div>
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="
+    margin-top:25px;
+  "
+>
 
-  </div>
+<tr>
+
+<td align="center">
+
+<div
+  style="
+    display:inline-block;
+    padding:18px 25px;
+    background:#0a1422;
+    border:1px solid #28528d;
+    border-radius:17px;
+    color:#4c91ff;
+    font-size:34px;
+    font-weight:bold;
+    letter-spacing:8px;
+  "
+>
+${code}
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+
+<!-- EXPIRY -->
+
+<div
+  style="
+    margin-top:20px;
+    text-align:center;
+    color:#78899f;
+    font-size:12px;
+  "
+>
+This code expires in
+<strong style="color:#19b978;">
+60 seconds
+</strong>
+</div>
+
+
+<!-- DIVIDER -->
+
+<div
+  style="
+    height:1px;
+    background:#223044;
+    margin:25px 0;
+  "
+></div>
+
+
+<!-- INFO -->
+
+<div
+  style="
+    color:#8191a6;
+    font-size:12px;
+    line-height:20px;
+  "
+>
+
+This verification code was requested for:
+
+<br>
+
+<strong
+  style="
+    color:#e7edf6;
+    word-break:break-all;
+  "
+>
+${email}
+</strong>
+
+</div>
+
+
+<!-- WARNING -->
+
+<div
+  style="
+    margin-top:18px;
+    padding:13px 14px;
+    background:#0b131f;
+    border:1px solid #1c2b3e;
+    border-radius:12px;
+    color:#718197;
+    font-size:11px;
+    line-height:18px;
+  "
+>
+
+If you did not request this verification code,
+you can safely ignore this email.
+
+</div>
+
+</td>
+
+</tr>
+
+
+<!-- FOOTER -->
+
+<tr>
+
+<td
+  align="center"
+  style="
+    padding:18px 20px;
+    border-top:1px solid #223044;
+    color:#64758b;
+    font-size:10px;
+    line-height:17px;
+  "
+>
+
+CODE VERIFY
+
+<br>
+
+<strong style="color:#aebdd0;">
+Developed By Eresh Devx
+</strong>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
 
 </body>
-</html>`
+
+</html>
+`
     });
 
     return res.status(200).json({
-      ok: true,
-      expiresIn: 60
+      ok: true
     });
 
   } catch (error) {
@@ -291,8 +424,7 @@ Developed By Eresh Devx`,
 
     return res.status(500).json({
       ok: false,
-      error: "server_error",
-      message: "Unable to send verification code."
+      error: "server_error"
     });
 
   }
