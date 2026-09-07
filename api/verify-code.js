@@ -1,40 +1,115 @@
-const json = (res, status, data) => {
-  res.status(status).json(data);
-};
-
 async function redis(command, args = []) {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const base = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-  if (!url || !token) {
-    throw new Error("Redis environment variables are missing.");
+  if (!base || !token) {
+    throw new Error("Redis environment variables are missing");
   }
 
-  const response = await fetch(`${url}/${command}/${args.map(encodeURIComponent).join("/")}`, {
+  const url =
+    base.replace(/\/$/, "") +
+    "/" +
+    command +
+    "/" +
+    args.map(v => encodeURIComponent(v)).join("/");
+
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`
     }
   });
 
   if (!response.ok) {
-    throw new Error("Redis request failed.");
+    throw new Error("Redis request failed");
   }
 
   return response.json();
 }
 
-module.exports = async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== "POST") {
-    return json(res, 405, {
+    return res.status(405).json({
       ok: false,
-      message: "Method not allowed."
+      error: "method_not_allowed"
     });
   }
 
   try {
-    const email = String(req.body?.email || "")
-      .trim()
-      .toLowerCase();
+    const { email, code } = req.body || {};
+
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    const cleanCode = String(code || "").trim();
+
+    if (!cleanEmail || !/^\d{5}$/.test(cleanCode)) {
+      return res.status(400).json({
+        ok: false,
+        error: "invalid_input"
+      });
+    }
+
+    const key = `otp:${cleanEmail}`;
+
+    const result = await redis("get", [key]);
+
+    if (!result.result) {
+      return res.status(400).json({
+        ok: false,
+        error: "expired"
+      });
+    }
+
+    let data;
+
+    try {
+      data = JSON.parse(result.result);
+    } catch {
+      await redis("del", [key]);
+
+      return res.status(400).json({
+        ok: false,
+        error: "expired"
+      });
+    }
+
+    if (data.attempts >= 5) {
+      await redis("del", [key]);
+
+      return res.status(429).json({
+        ok: false,
+        error: "too_many_attempts"
+      });
+    }
+
+    if (cleanCode !== data.code) {
+      data.attempts++;
+
+      await redis("setex", [
+        key,
+        "60",
+        JSON.stringify(data)
+      ]);
+
+      return res.status(400).json({
+        ok: false,
+        error: "wrong"
+      });
+    }
+
+    await redis("del", [key]);
+
+    return res.status(200).json({
+      ok: true
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      ok: false,
+      error: "server_error"
+    });
+  }
+};      .toLowerCase();
 
     const code = String(req.body?.code || "").trim();
 
